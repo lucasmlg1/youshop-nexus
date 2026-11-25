@@ -1,0 +1,1 @@
+"""Aplicação YouShop Nexus."""
