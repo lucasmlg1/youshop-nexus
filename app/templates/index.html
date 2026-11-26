@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouShop Nexus — AI Copilot Operacional</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <!-- TOP HEADER MINIMALISTA -->
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 40 40" width="26" height="26" fill="none" aria-hidden="true">
+        <path d="M12 10C12 6.686 14.686 4 18 4H30L25 13H18.5C17.12 13 16 14.12 16 15.5C16 16.88 17.12 18 18.5 18H22.5C27.194 18 31 21.806 31 26.5C31 31.194 27.194 35 22.5 35H10L15 26H21.5C22.88 26 24 24.88 24 23.5C24 22.12 22.88 21 21.5 21H17.5C13.91 21 12 17.5 12 10Z" fill="#0E234A" />
+        <path d="M11 13.5C11 10.462 13.462 8 16.5 8H24.5L20.5 15H16.8C15.8 15 15 15.8 15 16.8C15 17.8 15.8 18.6 16.8 18.6H23.2C26.955 18.6 30 21.645 30 25.4C30 29.155 26.955 32.2 23.2 32.2H16L19.5 25.5H22.2C23.2 25.5 24 24.7 24 23.7C24 22.7 23.2 21.9 22.2 21.9H16.5C13.462 21.9 11 18.6 11 13.5Z" fill="#97E600" />
+      </svg>
+      <span class="brand-divider" aria-hidden="true"></span>
+      <span class="brand-name">YOUSHOP</span>
+      <span class="nexus-pill">NEXUS</span>
+    </div>
+
+    <div class="top-controls">
+      <div class="seg-group" role="group" aria-label="Simulador">
+        <button id="btnRecover" type="button" class="seg-btn">Simular 3/4</button>
+        <button id="btnReset" type="button" class="seg-btn">Resetar</button>
+      </div>
+      <button id="btnOpenBase" type="button" class="top-chip">Base (<span id="countBase">11</span>)</button>
+      <button id="btnOpenHist" type="button" class="top-chip">Histórico (<span id="countHist">0</span>)</button>
+      <a href="/docs" target="_blank" rel="noopener" class="top-chip">API</a>
+      <span class="scope-pill">PRODUCER-A</span>
+    </div>
+  </header>
+
+  <!-- WORKSPACE SPLIT-VIEW (OPÇÃO B) -->
+  <main class="split-shell">
+    <!-- PAINEL ESQUERDO (42%): STREAM DO CHAMADO + TIMELINE MCP + COMPOSER -->
+    <section class="pane-left" aria-label="Execução do agente">
+      <div class="stream-scroll" id="streamArea">
+        <div id="topToast" class="toast" role="status" hidden></div>
+
+        <!-- CARD DO CHAMADO RECEBIDO -->
+        <article class="ticket-bubble" id="ticketBubble">
+          <div class="ticket-tag mono" id="activeTicketTag">TKT-001 • ORD-101</div>
+          <p class="ticket-quote" id="activeTicketText">
+            Comprador: “Oi, fiz o PIX do Curso Escala Pro faz quase duas horas, já descontou do banco e chegou o e-mail de compra aprovada, mas não veio nada para entrar nas aulas. Será que meu pagamento ficou preso ou deu erro no meu e-mail?”
+          </p>
+        </article>
+
+        <!-- TIMELINE VERTICAL MCP -->
+        <div class="timeline-block">
+          <div class="timeline-title" id="timelineHeading">Execução do Agente (MCP)</div>
+          <div class="timeline-list" id="mcpTimeline">
+            <div class="timeline-placeholder">
+              Clique em <strong>Investigar</strong> abaixo para acompanhar as chamadas MCP em tempo real.
+            </div>
+          </div>
+        </div>
+
+        <!-- TIMELINE PÓS-CORREÇÃO (0 LLM) -->
+        <div class="timeline-block" id="recoveryTimelineBlock" hidden>
+          <div class="timeline-title">Rechecagem pós-correção (MCP · 0 LLM)</div>
+          <div class="timeline-list" id="recoveryTimeline"></div>
+        </div>
+      </div>
+
+      <!-- COMPOSER FIXO NO RODAPÉ -->
+      <form id="composerForm" class="composer" novalidate>
+        <div class="preset-row" role="group" aria-label="Cenários rápidos">
+          <button type="button" class="preset-btn active" data-preset="t1" title="Falha coletiva silenciosa (ORD-101)">T1</button>
+          <button type="button" class="preset-btn" data-preset="t2" title="Pagamento pendente (ORD-109)">T2</button>
+          <button type="button" class="preset-btn" data-preset="t4" title="Pedido inexistente (ORD-999)">T4</button>
+          <button type="button" class="preset-btn" data-preset="t5" title="Dentro do prazo (ORD-105)">T5</button>
+          <button type="button" class="preset-btn" data-preset="t6" title="Prompt injection (ORD-111 / PRODUCER-B)">T6</button>
+          <button type="button" class="preset-btn" data-preset="pwd" title="Dúvida de senha (ORD-112)">Senha</button>
+        </div>
+
+        <div class="composer-bar">
+          <label class="order-box">
+            <span>Order ID</span>
+            <input id="orderId" type="text" class="mono" value="ORD-101" required autocomplete="off" />
+          </label>
+          <textarea
+            id="ticketMessage"
+            rows="2"
+            placeholder="Descrever incidente ou sintoma..."
+            required
+          >Oi, fiz o PIX do Curso Escala Pro faz quase duas horas, já descontou do banco e chegou o e-mail de compra aprovada, mas não veio nada para entrar nas aulas. Será que meu pagamento ficou preso ou deu erro no meu e-mail?</textarea>
+          <button id="btnInvestigate" type="submit" class="btn-lime">Investigar</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- PAINEL DIREITO (58%): DOSSIÊ EXECUTIVO -->
+    <section class="pane-right" aria-label="Dossiê do incidente">
+      <!-- EMPTY STATE -->
+      <div id="dossierEmpty" class="empty-dossier">
+        <div class="empty-icon">N</div>
+        <h2>Pronto para investigar</h2>
+        <p>Escolha um cenário (<strong>T1–T6</strong>) no compositor à esquerda e clique em <strong>Investigar</strong>. O dossiê executivo aparecerá aqui.</p>
+      </div>
+
+      <!-- LOADING SKELETON -->
+      <div id="dossierLoading" class="loading-dossier" hidden aria-live="polite">
+        <div class="skel skel-pill"></div>
+        <div class="skel skel-h1"></div>
+        <div class="skel skel-h1 short"></div>
+        <div class="skel skel-table"></div>
+        <div class="skel skel-box"></div>
+        <p class="loading-text">Consultando servidor MCP e validando evidências no backend...</p>
+      </div>
+
+      <!-- DOSSIÊ PREENCHIDO -->
+      <div id="dossierContent" class="dossier-inner" hidden>
+        <div class="dossier-top">
+          <span id="statusBadge" class="status-pill status-coletivo">FALHA COLETIVA</span>
+          <span id="metricsLabel" class="metrics-mono"></span>
+        </div>
+
+        <h1 id="dossierHeadline" class="dossier-headline"></h1>
+        <p id="dossierCause" class="dossier-cause"></p>
+
+        <!-- TABELA DE PEDIDOS AFETADOS -->
+        <div class="section-label">Pedidos afetados</div>
+        <div class="affected-card">
+          <table class="affected-table">
+            <thead>
+              <tr>
+                <th>Pedido</th>
+                <th>Chamado</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="affectedBody"></tbody>
+          </table>
+        </div>
+
+        <!-- RECOMENDAÇÃO HUMANA -->
+        <div class="rec-card">
+          <div class="rec-title">Recomendação humana</div>
+          <p id="dossierRec" class="rec-body"></p>
+        </div>
+
+        <!-- CTA PRINCIPAL DE RECUPERAÇÃO (RF05) -->
+        <button id="btnVerifyRecovery" type="button" class="btn-navy-full" hidden>
+          Verificar recuperação via MCP
+        </button>
+        <p id="recoveryCaption" class="recovery-caption" hidden></p>
+
+        <!-- EVIDÊNCIAS E LIMITAÇÕES (DISCRETO EM ACCORDION) -->
+        <details class="extra-details">
+          <summary>Evidências e validações do backend</summary>
+          <div class="extra-body">
+            <h4>Evidências</h4>
+            <ul id="evidencesList"></ul>
+            <h4>Limitações e validações</h4>
+            <ul id="limitationsList"></ul>
+          </div>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <!-- DRAWER LATERAL PARA BASE SIMULADA E HISTÓRICO -->
+  <div id="drawerBackdrop" class="drawer-backdrop" hidden></div>
+  <aside id="drawerPanel" class="drawer" hidden aria-label="Painel auxiliar">
+    <div class="drawer-head">
+      <h2 id="drawerTitle">Base simulada</h2>
+      <button id="btnCloseDrawer" type="button" class="drawer-close" aria-label="Fechar">✕</button>
+    </div>
+    <div id="drawerBody" class="drawer-body"></div>
+  </aside>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
